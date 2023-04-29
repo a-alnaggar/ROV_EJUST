@@ -1,13 +1,25 @@
-Start by creatnig a virtual env to install required packages.
+# General Instructions
 
-In the directory run `pip install -r .`. 
+To contribute:
+1. Checkout to a new branch
+2. Push your code
+3. Make pull request and add needed reviewersgit  
 
-To install `pysticks`. Follow these steps:
+# Adding Packages
 
-1. Clone this repo by:
-    ```bash
-    git clone git@github.com:a-alnaggar/PySticks.git
-    ```
-2. Change directory to the repo
-3. run `pip instal -e .`
-4. Done
+All packages should reside in `ROV-nodes` and named `<node_name>-node`.
+
+Add a the package name and description in `ROV-nodes/README.md` following the same style.
+
+Add a `README` file if the node requires external packages.
+
+# Dockerized ROS
+_If you already have `ROS` installed ignore this section_
+
+In `docker-compose.yaml` adjust volume bindings:
+
+```yaml
+    volumes:
+      - <PATH TO YOUR CATKIN WORKSPACE>:/opt/catkin_ws
+      - ./ros_env_init.sh:/opt/ros_env_init.sh
+```

@@ -3,5 +3,5 @@
 cd /
 . ./ros_entrypoint.sh
 
-cd /opt/ros-node/catkin_ws/devel/
+cd /opt/catkin_ws/devel/
 . ./setup.bash

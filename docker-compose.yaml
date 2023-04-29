@@ -9,7 +9,7 @@ services:
 
     # Bind host directory to container dir
     volumes:
-      - ./ros-node:/opt/ros-node
+      - ../catkin_ws:/opt/catkin_ws
       - ./ros_env_init.sh:/opt/ros_env_init.sh
     environment:
       - DISPLAY=${DISPLAY}
