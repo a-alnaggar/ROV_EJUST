@@ -3,21 +3,6 @@
 To contribute:
 1. Checkout to a new branch
 2. Push your code
-3. Make pull request and add needed reviewers 
-
-# Adding Packages
-
-All packages should reside in `ROV-nodes` and named `<node_name>-node`.
-
-Add a the package name and description in `ROV-nodes/README.md` following the same style.
-
-Add a `README` file if the node requires external packages.
-
-# General Instructions
-
-To contribute:
-1. Checkout to a new branch
-2. Push your code
 3. Make pull request and add needed reviewersgit  
 
 # Adding Packages
