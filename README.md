@@ -1,6 +1,7 @@
 Start by creatnig a virtual env to install required packages.
 
 In the directory run `pip install -r .`. 
+
 To install `pysticks`. Follow these steps:
 
 1. Clone this repo by:
