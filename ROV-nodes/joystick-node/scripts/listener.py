@@ -11,7 +11,7 @@ def callback(data):
 
 def listener():
     rospy.init_node("listener", anonymous=True)
-    rospy.Subscriber("joystick", Twist, callback)
+    rospy.Subscriber("/joystick", Twist, callback)
     rospy.spin()
 
 

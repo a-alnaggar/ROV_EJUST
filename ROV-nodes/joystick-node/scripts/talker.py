@@ -26,7 +26,7 @@ from pysticks import get_controller
 controller = get_controller()
 
 def talker():
-    pub = rospy.Publisher("joystick", Twist, queue_size=10)
+    pub = rospy.Publisher("ROV/ctrl_sig", Twist, queue_size=10)
     rospy.init_node("talker", anonymous=True)
     rate = rospy.Rate(10)
     twist_msg = Twist()
