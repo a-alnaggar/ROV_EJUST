@@ -13,7 +13,7 @@ class Param:
 
     x_const: float = 1
     y_const: float = 1
-    theta_const: float = 2
+    theta_const: float = 1
     z_const: float = 1
 
 
@@ -50,9 +50,9 @@ def ctrl_sig_recieved_callback(msg):
     vel = Twist()
     vel.angular.x = 0
     vel.angular.y = 0
-    vel.angular.z = w_z  # desired w_z
+    vel.angular.z = v_y  # desired w_z
     vel.linear.x = v_x  # desired v_x
-    vel.linear.y = v_y  # desired v_y
+    vel.linear.y = w_z  # desired v_y
     vel.linear.z = d_z  # desired d_z
 
     rospy.loginfo(

@@ -1,5 +1,8 @@
+#this node is made for callibrating all the parameters that could be tuned
+# the tuning could be sent via the joystick buttons or the ros topic pup
+
 import rospy
-from geometry_msgs.msg import Pose2D, Twist
+from geometry_msgs.msg import Pose2D, Twist, Vector3
 from std_msgs.msg import Float32MultiArray
 from std_msgs.msg import Float64
 from dataclasses import dataclass
@@ -70,11 +73,8 @@ class PID:
         self.k_integral = k_integral
         self.k_derivative = k_derivative
 
-
-def mapFromTo(x, a, b, c, d):
-    y = (x - a) / (b - a) * (d - c) + c
-    return y
-
+def mapFromTo(num, inMin, inMax, outMin, outMax):
+  return  (float(num - inMin) / float(inMax - inMin) * (outMax - outMin)) + outMin
 
 @dataclass
 class Param:
@@ -89,13 +89,18 @@ class Param:
     # TODO: measure the floatability of the ROV
     floatability = 0
     max_pool_depth = 4
-    thruster_min = 1500
+    thruster_stop = 1500
     thruster_max_forward = 1800
     thruster_max_reverse = 1200
-    max_vx = 1
-    max_vy = 1
-    max_wz = 2
-    max_dz = 1
+    phi_rev = 1500
+    max_vx =3    
+    min_vx =-3
+    max_vy =3    
+    min_vy =-3
+    max_wz =3    
+    min_wz =-3
+    max_dz =3    
+    min_dz =-3
 
 
 global param
@@ -122,7 +127,28 @@ def node_init():
 
     rospy.Subscriber("ROV/cmd_vel", Twist, cmd_vel_recieved_callback)
     rospy.Subscriber("ROV/depth", Float64, depth_recieved_callback)
+
+    rospy.Subscriber("ROV/PID",Vector3,PID_calibration_callback)
+    rospy.Subscriber("ROV/params",Vector3,apg_calibration_callback)
+    rospy.Subscriber("ROV/op",Vector3,op_calibration_callback)
+
     rospy.spin()
+
+def PID_calibration_callback(pid_prm):
+    param.kp_depth = pid_prm.x
+    param.ki_depth = pid_prm.y
+    param.kd_depth = pid_prm.z
+    
+def apg_calibration_callback(apg_prm):
+    param.gamma = apg_prm.x
+    param.alpha = apg_prm.y
+    param.beta = apg_prm.z
+
+def op_calibration_callback(op_prm):
+    param.floatability = op_prm.x
+    param.phi_rev = op_prm.y
+
+
 
 
 def depth_recieved_callback(depth):
@@ -146,92 +172,75 @@ def cmd_vel_recieved_callback(cmd_vel):
     v_y = cmd_vel.linear.y
     d_z = cmd_vel.linear.z
 
-    # Linear X-axis (forward/backward) Control
-    phi_1 = param.gamma * v_x
-    phi_2 = param.gamma * v_x
-    phi_3 = param.gamma * v_x
-    phi_4 = param.gamma * v_x
 
-    # # Linear Y-axis (sideways) Control
-    # if v_y > 0:
-    #     phi_1 =  -param.gamma * v_y 
-    #     phi_2 =  + param.gamma * v_y
-    #     phi_3 =  -param.gamma * v_y
-    #     phi_4 =  +  param.gamma * v_y
-    # else:
-    #     phi_1 =  + param.gamma * v_y 
-    #     phi_2 =  - param.gamma * v_y
-    #     phi_3 =  + param.gamma * v_y
-    #     phi_4 =  - param.gamma * v_y
+    # Planer Control
+    phi_1 = param.gamma * v_x -param.gamma * v_y 
+    phi_2 = param.gamma * v_x +param.gamma * v_y
+    phi_3 = param.gamma * v_x -param.gamma * v_y
+    phi_4 = param.gamma * v_x +param.gamma * v_y
 
-    # # Rotation Control
-    # if w_z >= 0:
-    #     phi_1 = param.beta * w_z
-    #     phi_3 =  - param.beta * w_z
-    # else:
-    #     phi_2 =  + param.beta * w_z
-    #     phi_4 =  - param.beta * w_z
 
-    # Mapping thursters of planer motion
-    max_pos_vel_per_thruster = 1
-    max_neg_vel_per_thruster = -max_pos_vel_per_thruster
-    rospy.loginfo(f"max_pos_vel_per_thruster = {max_pos_vel_per_thruster}")
+    # Rotation Control
+    phi_1 += param.beta * w_z
+    phi_2 += -param.beta * w_z
+    phi_3 += -param.beta * w_z
+    phi_4 += param.beta * w_z
+
+    phi_1 = mapFromTo(phi_1, param.min_wz, param.max_wz, param.thruster_max_reverse, param.thruster_max_forward)
+    phi_2 = mapFromTo(phi_2, param.min_vx, param.max_vx, param.thruster_max_reverse, param.thruster_max_forward)
+    phi_3 = mapFromTo(phi_3, param.min_vy, param.max_vy, param.thruster_max_reverse, param.thruster_max_forward)
+    phi_4 = mapFromTo(phi_4, param.min_dz, param.max_dz, param.thruster_max_reverse, param.thruster_max_forward)
+
 
     planer_thrusters_list = [phi_1, phi_2, phi_3, phi_4]
-    for i in range(len(planer_thrusters_list)):
-        if planer_thrusters_list[i] > 0:
-            planer_thrusters_list[i] = mapFromTo(
-                planer_thrusters_list[i],
-                0,
-                max_pos_vel_per_thruster,
-                param.thruster_min,
-                param.thruster_max_forward,
-            )
-        else:
-            planer_thrusters_list[i] = mapFromTo(
-                planer_thrusters_list[i],
-                0,
-                max_neg_vel_per_thruster,
-                param.thruster_min,
-                param.thruster_max_reverse,
-            )
-        # rospy.loginfo(f"phi_{i} = {planer_thrusters_list[i]}")
+
+
+    # for i in range(len(planer_thrusters_list)):
+    #     if planer_thrusters_list[i] > 0:
+    #         planer_thrusters_list[i] = mapFromTo(
+    #             planer_thrusters_list[i],
+    #             0,
+    #             max_pos_vel_per_thruster,
+    #             param.thruster_min,
+    #             param.thruster_max_forward,
+    #         )
         
 
-    # Depth Control
-    pid_depth = PID(
-        k_proportaiol=param.kp_depth,
-        k_integral=param.ki_depth,
-        k_derivative=param.kd_depth,
-    )
-    pid_depth_val = (
-        pid_depth.compute(ref=d_z, measured=depth.actual_depth) + param.floatability
-    )
+    # # Depth Control
+    # pid_depth = PID(
+    #     k_proportaiol=param.kp_depth,
+    #     k_integral=param.ki_depth,
+    #     k_derivative=param.kd_depth,
+    # )
+    # pid_depth_val = (
+    #     pid_depth.compute(ref=d_z, measured=depth.actual_depth) + param.floatability
+    # )
 
-    min_pid_val = (-param.max_pool_depth / 2) * param.kp_depth
-    max_pid_val = (param.max_pool_depth / 2) * param.kp_depth
-    if pid_depth_val > 0:
-        # TODO: Use the curve given in the data sheet of the thrusters
-        phi_5 = mapFromTo(
-            pid_depth_val / 2,
-            min_pid_val,
-            max_pid_val,
-            param.thruster_min,
-            param.thruster_max_forward,
-        )
-        phi_6 = phi_5
-    else:
-        phi_5 = mapFromTo(
-            pid_depth_val / 2,
-            min_pid_val,
-            max_pid_val,
-            param.thruster_min,
-            param.thruster_max_reverse,
-        )
-        phi_6 = phi_5
+    # min_pid_val = (-param.max_pool_depth / 2) * param.kp_depth
+    # max_pid_val = (param.max_pool_depth / 2) * param.kp_depth
+    # if pid_depth_val > 0:
+    #     # TODO: Use the curve given in the data sheet of the thrusters
+    #     phi_5 = mapFromTo(
+    #         pid_depth_val / 2,
+    #         min_pid_val,
+    #         max_pid_val,
+    #         param.thruster_stop,
+    #         param.thruster_max_forward,
+    #     )
+    #     phi_6 = phi_5
+    # else:
+    #     phi_5 = mapFromTo(
+    #         pid_depth_val / 2,
+    #         min_pid_val,
+    #         max_pid_val,
+    #         param.thruster_stop,
+    #         param.thruster_max_reverse,
+    #     )
+    #     phi_6 = phi_5
 
     # phi_5 and phi_6 will be zero for now
-    phi_5 = 1500
+    phi_5 = param.phi_rev
+    # phi_5 = 1375
     phi_6 = 1500
     #################################
 
@@ -246,6 +255,15 @@ def cmd_vel_recieved_callback(cmd_vel):
 
     # publish the message
     rospy.loginfo(thrusters_voltages)
+
+    rospy.loginfo("param.kp_depth: {}, Param.ki_depth: {}, Param.kd_depth: {}".format(
+        param.kp_depth,param.ki_depth,param.kd_depth))
+    rospy.loginfo("param.gamma: {}, Param.alpha: {}, Param.beta: {}".format(
+        param.gamma,param.alpha,param.beta))
+    rospy.loginfo("param.floatability: {}, Param.phi_rev: {}".format(   
+        param.floatability,param.phi_rev))
+    
+
     thrusters_voltages_publisher.publish(thrusters_voltages)
     rospy.sleep(0.01)
 
