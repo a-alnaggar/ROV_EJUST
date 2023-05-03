@@ -90,8 +90,8 @@ class Param:
     floatability = 0
     max_pool_depth = 4
     thruster_stop = 1500
-    thruster_max_forward = 1800
-    thruster_max_reverse = 1200
+    thruster_max_forward = 1780 #1800
+    thruster_max_reverse = 1180 #1200
     phi_rev = 1500
     max_vx =3    
     min_vx =-3
@@ -172,6 +172,8 @@ def cmd_vel_recieved_callback(cmd_vel):
     v_y = cmd_vel.linear.y
     d_z = cmd_vel.linear.z
 
+    # v_y = 0
+    # w_z = 0
 
     # Planer Control
     phi_1 = param.gamma * v_x -param.gamma * v_y 
@@ -181,19 +183,23 @@ def cmd_vel_recieved_callback(cmd_vel):
 
 
     # Rotation Control
-    phi_1 += param.beta * w_z
-    phi_2 += -param.beta * w_z
-    phi_3 += -param.beta * w_z
-    phi_4 += param.beta * w_z
+    phi_1 += - param.beta * w_z
+    phi_2 += param.beta * w_z
+    phi_3 += param.beta * w_z
+    phi_4 += - param.beta * w_z
 
     phi_1 = mapFromTo(phi_1, param.min_wz, param.max_wz, param.thruster_max_reverse, param.thruster_max_forward)
     phi_2 = mapFromTo(phi_2, param.min_vx, param.max_vx, param.thruster_max_reverse, param.thruster_max_forward)
     phi_3 = mapFromTo(phi_3, param.min_vy, param.max_vy, param.thruster_max_reverse, param.thruster_max_forward)
     phi_4 = mapFromTo(phi_4, param.min_dz, param.max_dz, param.thruster_max_reverse, param.thruster_max_forward)
 
-
-    planer_thrusters_list = [phi_1, phi_2, phi_3, phi_4]
-
+# #######################################
+#     phi_1 = 1500 #2
+#     phi_2 = 1500 #1
+#     phi_3 = 1500
+#     phi_4 = 1500
+    planer_thrusters_list = [phi_2, phi_1, phi_3, phi_4]
+    
 
     # for i in range(len(planer_thrusters_list)):
     #     if planer_thrusters_list[i] > 0:
