@@ -33,19 +33,29 @@ def talker():
     while not rospy.is_shutdown():
         
         controller.update()
+        aimball_x = controller.getAimball()[0]
+        aimball_y = controller.getAimball()[1]
         
-        twist_msg.linear.x = controller.getPitch()
-        twist_msg.linear.y = controller.getRoll()
-        twist_msg.linear.z = controller.getThrottle()
+        
+        # Get depth value readings
+        controller.depthUpFine()
+        controller.depthUpCoarse()
+        controller.depthDownFine()
+        controller.depthDownCoarse()
+        
+        twist_msg.linear.x = controller.getPitch() if not aimball_x else 0
+        twist_msg.linear.y = controller.getRoll() if not aimball_y else 0
+        twist_msg.linear.z = controller.depth
         twist_msg.angular.z = controller.getYaw()
+        
         
         rospy.loginfo("Throttle: %+2.2f   Roll: %+2.2f   Pitch: %+2.2f   Yaw: %+2.2f   Aux: %+2.2f"
             % (
-                controller.getThrottle(),
+                controller.depth,
                 controller.getRoll(),
                 controller.getPitch(),
                 controller.getYaw(),
-                controller.getAux(),
+                controller.getTrigger(),
             ))
         pub.publish(twist_msg)
         rate.sleep()

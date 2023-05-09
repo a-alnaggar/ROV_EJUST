@@ -1,4 +1,4 @@
-version: '3.0'
+version: '3.7'
 
 services:
   ros_core:
@@ -9,13 +9,18 @@ services:
 
     # Bind host directory to container dir
     volumes:
+      - ../cat2/:/opt/cat2
       - ../catkin_ws:/opt/catkin_ws
       - ./ros_env_init.sh:/opt/ros_env_init.sh
+      - ~/repos/PySticks:/opt/PySticks
+
+    devices:
+      - /dev/tty:/dev/tty
     environment:
       - DISPLAY=${DISPLAY}
       # Allow containers to run in background
-    command: bash -c "tail -F anything"
-
+    command: "tail -F anything"
+    init: true
     network_mode: host
 
 volumes:
