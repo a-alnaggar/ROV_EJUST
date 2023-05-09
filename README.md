@@ -3,7 +3,7 @@
 To contribute:
 1. Checkout to a new branch
 2. Push your code
-3. Make pull request and add needed reviewersgit  
+3. Make pull request and add needed reviewers
 
 # Adding Packages
 
