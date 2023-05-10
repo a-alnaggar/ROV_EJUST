@@ -1,35 +1,24 @@
 #!/usr/bin/env python3
 
-
-# import rospy
-# from geometry_msgs.msg import Twist
-
-# # Create a new Twist message
-# twist_msg = Twist()
-
-# # Set the linear and angular velocities
-# twist_msg.linear.x = 0.5
-# twist_msg.angular.z = 0.2
-
-# # Publish the Twist message to the /cmd_vel topic
-# rospy.init_node('twist_publisher')
-# pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
-# pub.publish(twist_msg)
-
-
 import rospy
 
 from geometry_msgs.msg import Twist
+from std_msgs.msg import Bool
 from pysticks import get_controller
 
 
 controller = get_controller()
 
 def talker():
-    pub = rospy.Publisher("joystick", Twist, queue_size=10)
-    rospy.init_node("talker", anonymous=True)
+    pub = rospy.Publisher("ROV/joystick", Twist, queue_size=10)
+    gripper = rospy.Publisher("ROV/gripper",Bool,queue_size=1)
+
+    rospy.init_node("Joystick", anonymous=True)
     rate = rospy.Rate(10)
+    
     twist_msg = Twist()
+    grip_msg = Bool()
+
     while not rospy.is_shutdown():
         
         controller.update()
@@ -46,8 +35,9 @@ def talker():
         twist_msg.linear.x = controller.getPitch() if not aimball_x else 0
         twist_msg.linear.y = controller.getRoll() if not aimball_y else 0
         twist_msg.linear.z = controller.depth
-        twist_msg.angular.z = controller.getYaw()
+        twist_msg.angular.z = controller.getYaw() if not aimball_x and not aimball_y else 0
         
+        grip_msg.data = bool(controller.getTrigger() + 1)
         
         rospy.loginfo("Throttle: %+2.2f   Roll: %+2.2f   Pitch: %+2.2f   Yaw: %+2.2f   Aux: %+2.2f"
             % (
@@ -55,8 +45,15 @@ def talker():
                 controller.getRoll(),
                 controller.getPitch(),
                 controller.getYaw(),
-                controller.getTrigger(),
+                bool(controller.getTrigger() + 1),
             ))
+        
+        gripper.publish(grip_msg)
+        
+
+        if controller.stopAll():
+            twist_msg = Twist()
+            
         pub.publish(twist_msg)
         rate.sleep()
 
