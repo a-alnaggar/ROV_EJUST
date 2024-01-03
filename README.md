@@ -1,3 +1,10 @@
+# EJUST ROV Simulation Mission
+## Mission 1
+ [![Watch the video](![image](https://github.com/a-alnaggar/ROV_EJUST/assets/121443735/9813af0a-c863-448c-a716-6eeef19e82e1)
+)](https://www.youtube.com/watch?v=QihYc0L7ufg)
+## Autonomous Mission
+[![Watch the video](https://github.com/a-alnaggar/ROV_EJUST/blob/880b62635f2593fc961e05d001b4f6ad1f2e061f/WhatsApp%20Image%202024-01-03%20at%205.58.46%20PM.jpeg)](https://youtu.be/KmTFxljsGuw)
+
 # General Instructions
 
 To contribute:
